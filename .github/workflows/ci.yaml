@@ -1,0 +1,91 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:  
+  
+env:
+  NASMLOG: "nasm.log"
+  BUILDLOG: "build.log"
+  OUTLOG: "result.log"
+  
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  buildtest:
+    if: (github.actor == 'RonoveRaum') || (github.actor == 'SEt-t') || (github.run_number < 31)
+    
+    runs-on: windows-latest
+    timeout-minutes: 4
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: ilammy/setup-nasm@v1      
+      - name: nasm
+        id: nasm
+        run: |  
+            $ErrorActionPreference = 'SilentlyContinue'
+            
+            pwsh -Command { $(nasm --prefix _ -f win32 $((Get-ChildItem -Path .. -Include @('*.asm') -Recurse -ErrorAction SilentlyContinue -Force).FullName) -o test.obj) *>&1 > ${{env.NASMLOG}} }
+            
+            $blog="$(Get-Content ${{env.BUILDLOG}} -Raw)"                        
+            if ($blog.Length) { Write-Output "::notice Build log not empty:" }
+            echo "# nasm log:" >> $env:GITHUB_STEP_SUMMARY
+            echo '```' >> $env:GITHUB_STEP_SUMMARY
+            "$blog" >> $env:GITHUB_STEP_SUMMARY
+            echo '```' >> $env:GITHUB_STEP_SUMMARY            
+            $nasm_exit_code = $LastExitCode
+            Get-ChildItem -Path .
+            if ($nasm_exit_code) { exit(1) }
+         
+      - uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          arch: x64_x86                     
+      - name: build
+        id: build
+        run: |  
+            $ErrorActionPreference = 'SilentlyContinue'
+            
+            pwsh -Command { cl tmain.c test.obj /O2 /Fe:__test.exe *>&1 > ${{env.BUILDLOG}} }
+            
+            $blog="$(Get-Content ${{env.BUILDLOG}} -Raw)"
+            echo "# Build log:" >> $env:GITHUB_STEP_SUMMARY
+            echo '```' >> $env:GITHUB_STEP_SUMMARY
+            "$blog" >> $env:GITHUB_STEP_SUMMARY
+            echo '```' >> $env:GITHUB_STEP_SUMMARY                        
+            $build_exit_code = $LastExitCode
+            Get-ChildItem -Path .
+            if ($build_exit_code) { exit(1) }
+                         
+      - name: tests
+        id: tests
+        run: | 
+            $ErrorActionPreference = 'SilentlyContinue'
+            
+            & ./__test.exe *>&1 > ${{env.OUTLOG}}
+            
+            $tlog="$(Get-Content ${{env.OUTLOG}} -Raw)"
+
+            if ($tlog.Length -ne 0)
+            {            
+              echo "# Test logs" >> $env:GITHUB_STEP_SUMMARY
+              echo '```' >> $env:GITHUB_STEP_SUMMARY
+              "$tlog" >> $env:GITHUB_STEP_SUMMARY
+              echo '```' >> $env:GITHUB_STEP_SUMMARY
+            }       
+            else
+            {
+              Write-Output "::notice Stdout is empty"
+            }
+            $test_exit_code = $LastExitCode
+              echo 'Failed tests:' >> $env:GITHUB_STEP_SUMMARY
+              echo '```' >> $env:GITHUB_STEP_SUMMARY
+              "$test_exit_code" >> $env:GITHUB_STEP_SUMMARY
+              echo '```' >> $env:GITHUB_STEP_SUMMARY
+
+            exit($test_exit_code)
+            
+
+          
