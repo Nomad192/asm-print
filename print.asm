@@ -6,7 +6,7 @@ format_pointer resb 4
 number_pointer resb 4
 
 	section .data
-input_data resb 34
+input_data resb 36
 number resb 16
 nuber_str resb 50
 sign resb 1
