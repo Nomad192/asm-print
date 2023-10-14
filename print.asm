@@ -5,7 +5,6 @@ buffer_pointer resb 4
 format_pointer resb 4
 number_pointer resb 4
 
-	section .data
 input_data resb 36
 number resb 16
 nuber_str resb 50
@@ -153,7 +152,7 @@ print:
 		INC eax
 
 		JMP while_reverse_1_forward_mark
-	break_reverse_1_forward_mark
+	break_reverse_1_forward_mark:
 
 	DEC eax
 
@@ -170,7 +169,7 @@ print:
         Jl break_backward_1_forward_mark
 
 		JMP while_backward_1_forward_mark
-	break_backward_1_forward_mark
+	break_backward_1_forward_mark:
 	mov byte [ecx], 0
 
 
@@ -461,7 +460,7 @@ print:
 		INC eax
 
 		JMP while_reverse_2_forward_mark
-	break_reverse_2_forward_mark
+	break_reverse_2_forward_mark:
 
 	DEC eax
 
@@ -482,7 +481,7 @@ print:
         Jl break_backward_2_forward_mark
 
 		JMP while_backward_2_forward_mark
-	break_backward_2_forward_mark                       
+	break_backward_2_forward_mark:                     
 
 	JMP return_mark
 
@@ -503,7 +502,7 @@ print:
 		INC ecx
 
 		JMP while_usial_reverse_2_forward_mark
-	break_usial_reverse_2_forward_mark
+	break_usial_reverse_2_forward_mark:
 
 	DEC eax
 
